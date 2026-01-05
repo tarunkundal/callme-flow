@@ -1,11 +1,4 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { format } from "date-fns";
-import { CalendarIcon, Phone, Clock, MessageSquare, Type, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import {
     Form,
@@ -16,6 +9,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
     Popover,
     PopoverContent,
@@ -28,26 +22,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { convertToUTC, TIMEZONES, today } from "@/data/helpers";
 import { cn } from "@/lib/utils";
 import { CreateReminderInput, Reminder } from "@/types/reminder";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { format } from "date-fns";
+import { CalendarIcon, Clock, Globe, MessageSquare, Phone, Type } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-// Common timezones
-const TIMEZONES = [
-    { value: "America/New_York", label: "Eastern Time (ET)" },
-    { value: "America/Chicago", label: "Central Time (CT)" },
-    { value: "America/Denver", label: "Mountain Time (MT)" },
-    { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
-    { value: "America/Phoenix", label: "Arizona (AZ)" },
-    { value: "America/Anchorage", label: "Alaska (AK)" },
-    { value: "Pacific/Honolulu", label: "Hawaii (HI)" },
-    { value: "Europe/London", label: "London (GMT)" },
-    { value: "Europe/Paris", label: "Paris (CET)" },
-    { value: "Europe/Berlin", label: "Berlin (CET)" },
-    { value: "Asia/Tokyo", label: "Tokyo (JST)" },
-    { value: "Asia/Shanghai", label: "Shanghai (CST)" },
-    { value: "Asia/Dubai", label: "Dubai (GST)" },
-    { value: "Australia/Sydney", label: "Sydney (AEST)" },
-];
 
 // Phone validation regex (E.164 format)
 const phoneRegex = /^\+[1-9]\d{1,14}$/;
@@ -117,15 +101,17 @@ export function ReminderForm({
     });
 
     const handleSubmit = (values: FormValues) => {
-        const [hours, minutes] = values.time.split(":").map(Number);
-        const scheduledAt = new Date(values.date);
-        scheduledAt.setHours(hours, minutes, 0, 0);
+        const scheduledAtUtc = convertToUTC(
+            values.date,
+            values.time,
+            values.timezone
+        );
 
         onSubmit({
             title: values.title,
             message: values.message,
             phoneNumber: values.phoneNumber,
-            scheduledAt,
+            scheduledAt: scheduledAtUtc,
             timezone: values.timezone,
         });
     };
@@ -229,6 +215,7 @@ export function ReminderForm({
                                     <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                                     Date
                                 </FormLabel>
+
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <FormControl>
@@ -239,26 +226,37 @@ export function ReminderForm({
                                                     !field.value && "text-muted-foreground"
                                                 )}
                                             >
-                                                {field.value ? (
-                                                    format(field.value, "PPP")
-                                                ) : (
-                                                    <span>Pick a date</span>
-                                                )}
+                                                {field.value ? format(field.value, "PPP") : "Pick a date"}
                                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                             </Button>
                                         </FormControl>
                                     </PopoverTrigger>
+
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
                                             mode="single"
                                             selected={field.value}
-                                            onSelect={field.onChange}
-                                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                            onSelect={(date) => {
+                                                if (!date) return;
+
+                                                const normalized = new Date(
+                                                    date.getFullYear(),
+                                                    date.getMonth(),
+                                                    date.getDate(),
+                                                    0,
+                                                    0,
+                                                    0,
+                                                    0
+                                                );
+
+                                                field.onChange(normalized);
+                                            }}
+                                            disabled={{ before: today() }}
                                             initialFocus
-                                            className="pointer-events-auto"
                                         />
                                     </PopoverContent>
                                 </Popover>
+
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -274,7 +272,7 @@ export function ReminderForm({
                                     <Clock className="h-4 w-4 text-muted-foreground" />
                                     Time
                                 </FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select value={field.value} onValueChange={field.onChange}>
                                     <FormControl>
                                         <SelectTrigger className="bg-card">
                                             <SelectValue placeholder="Select time" />

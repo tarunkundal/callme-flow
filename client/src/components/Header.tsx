@@ -23,7 +23,7 @@ export function Header({ onCreateNew }: HeaderProps) {
     };
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
+        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl mb-4">
             <div className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
                 {/* Logo */}
                 <div className="flex items-center gap-3">
@@ -54,7 +54,7 @@ export function Header({ onCreateNew }: HeaderProps) {
                         <span className="sr-only">Toggle theme</span>
                     </Button>
 
-                    {!onCreateNew && (
+                    {onCreateNew && (
                         <Button onClick={onCreateNew} className="rounded-full shadow-md">
                             <span className="hidden sm:inline">New Reminder</span>
                             <span className="sm:hidden">New</span>

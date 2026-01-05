@@ -2,9 +2,6 @@
 
 import { ThemeProvider as NextThemesProvider, ThemeProviderProps } from 'next-themes';
 
-/**
- * Client-side Theme Provider using next-themes
- */
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
     return (
         <NextThemesProvider
