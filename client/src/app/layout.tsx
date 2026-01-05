@@ -9,6 +9,9 @@ import { ThemeProvider } from "./providers/ThemeProvider";
 export const metadata: Metadata = {
   title: "Call Me",
   description: "An app to make phone calls directly from your browser.",
+  icons: {
+    icon: "/logo.svg",
+  },
 };
 
 export default function RootLayout({
